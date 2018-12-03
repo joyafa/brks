@@ -152,7 +152,7 @@ bool Interface::accept_client(int efd, int sfd)
     struct sockaddr client_addr;
     int addrlen = sizeof(struct sockaddr);
 
-    int client_fd = accept(sfd, &client_addr, &addrlen);
+    int client_fd = accept(sfd, &client_addr, (socklen_t* )&addrlen);
     if (client_fd == -1)
     {
        if (errno == EAGAIN || errno == EWOULDBLOCK)
@@ -213,6 +213,8 @@ bool Interface::add_server_socket(int socket)
     return true;
 }
 
+#define safe_delete_point(p) if(NULL != p) delete p
+
 void Interface::run()
 {
     struct epoll_event events[MAX_EVENTS] = {0};
@@ -245,7 +247,7 @@ void Interface::run()
                 //decode head
                 protocol_head_t proto_head;
                 protocol_head_codec_t head_codec;
-                head_codec.decode(buf, BUF_SIZE, &proto_head);
+                head_codec.decode((u8* )buf, BUF_SIZE, &proto_head);
 
                 result = 1;
                 cnt = nio_recv(events[i].data.fd, buf + sizeof(protocol_head_t), proto_head.len_, &result);
@@ -255,8 +257,24 @@ void Interface::run()
                     && (proto_head.type_ <= BINARY_PROTOCOL_TYPE)
                     && (codecs_[proto_head.type_] != NULL))
                 {
-                    iEvent* ev  = codecs_[proto_head.type_]->decode(proto_head.msg_id_, buf + sizeof(protocol_head_t), proto_head.len_);
+                    //decode request
+                    iEvent* ev  = codecs_[proto_head.type_]->decode(proto_head.msg_id_, (u8* )(buf + sizeof(protocol_head_t)), proto_head.len_);
                     iEvent* rsp = callback_(ev);
+                    if (rsp)
+                    {
+                        bool ret = codecs_[proto_head.type_]->encode(rsp, (u8* )buf, BUF_SIZE);
+                        if (ret)
+                        {
+                            //rsp body
+                            //rsp header
+                            proto_head.msg_id_ = rsp.get_eid();
+                            //TODO:len buf 
+                            nio_write(events[i].data.fd, buf, BUF_SIZE);
+                        }
+                        
+                    }
+                    safe_delete_point(ev);
+                    safe_delete_point(rsp);
 
                     // TODO : encode rsp event to
                     // TODO : send response,

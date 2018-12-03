@@ -21,10 +21,22 @@ bool json_protocol_codec_t::encode(iEvent* ev, u8* buffer, u32 size)
         case EEVENTID_GET_ACCOUNT_BALANCE_RSP:
             ret = encode_get_account_balance_rsp_ev(ev, buffer, size);
             break;
+        
+        case EEVENTID_LIST_ACCOUNT_RECORDS_RSP:
+            ret = encode_list_account_records_rsp_ev(ev, buffer, size);
+            break;
+            
+        case EEVENTID_LIST_TRAVELS_RSP:
+            ret = encode_list_travels_rsp_ev(ev, buffer, size);
+            break;
+            
+        default:
+            break;
     }
 
     return ret;
 }
+
 
 iEvent* json_protocol_codec_t::decode(u16 mid, u8* buffer, u32 size)
 {
@@ -44,7 +56,22 @@ iEvent* json_protocol_codec_t::decode(u16 mid, u8* buffer, u32 size)
         ev = decode_2_login_req_ev(attributes);
         break;
     case EEVENTID_RECHARGE_REQ:
-
+        ev = decode_2_recharge_req_ev(attributes);
+        break;
+    case EEVENTID_GET_ACCOUNT_BALANCE_REQ:
+        ev = decode_2_get_account_balance_req_ev(attributes);
+        break;
+    case EEVENTID_LIST_ACCOUNT_RECORDS_REQ:
+        ev = decode_2_list_account_record_req_ev(attributes);
+        break;
+    case EEVENTID_UNLOCK_REQ:
+        ev = decode_2_unlock_req_ev(attributes);
+        break;
+    case EEVENTID_LIST_TRAVELS_REQ:
+        ev = decode_2_list_travel_records_req_ev(attributes);
+        break;
+    case EEVENTID_LOCK_REQ:
+        ev = decode_2_lock_req_ev(attributes);
         break;
     default:
         LOG_WARN("mid %d is invalid.", mid);

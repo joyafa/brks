@@ -28,6 +28,8 @@ private:
 private:
     virtual bool encode_common_rsp_ev(CommonRspEv* rsp, u8* buffer, u32 size);
     virtual bool encode_get_account_balance_rsp_ev(GetAccountBalanceRspEv* rsp, u8* buffer, u32 size);
+    virtual bool encode_list_account_records_rsp_ev(ListAccountRecordsReqEv* rsp, u8* buffer, u32 size);
+    virtual bool encode_list_travels_rsp_ev(ListTravelRecordsReqEv* rsp, u8* buffer, u32 size);    
 };
 
 #endif
