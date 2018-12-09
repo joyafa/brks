@@ -213,4 +213,18 @@ bool json_protocol_codec_t::encode_get_account_balance_rsp_ev(GetAccountBalanceR
 }
 
 
+bool json_protocol_codec_t::encode_list_account_records_rsp_ev(ListAccountRecordsReqEv* rsp, u8* buffer, u32 size)
+{
+    Json::Value attributes;
+    //TODO 
+    return true;
+}
+
+
+bool json_protocol_codec_t::encode_list_travels_rsp_ev(ListTravelRecordsReqEv* rsp, u8* buffer, u32 size)   
+{
+    //TODO:
+    return true;
+}
+
 

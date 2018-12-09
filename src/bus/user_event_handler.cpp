@@ -59,27 +59,22 @@ iEvent* UserEventHandler::handle(const iEvent* ev)
     }
 
     u32 eid = ev->get_eid();
-
-    if (eid == EEVENTID_GET_MOBILE_CODE_REQ)
+    switch (eid)
     {
-        return handle_mobile_code_req((MobileCodeReqEv*) ev);
+        case EEVENTID_GET_MOBILE_CODE_REQ:
+            return handle_mobile_code_req((MobileCodeReqEv*) ev);
+        case EEVENTID_LOGIN_REQ:
+            return handle_login_req((LoginReqEv*) ev);
+        case EEVENTID_RECHARGE_REQ:
+            return handle_recharge_req((RechargeReqEv*) ev);
+        case EEVENTID_GET_ACCOUNT_BALANCE_REQ:
+            return handle_get_account_balance_req((GetAccountBalanceReqEv*) ev);
+        case EEVENTID_LIST_ACCOUNT_RECORDS_REQ:
+            return handle_list_account_records_req((ListAccountRecordsReqEv*) ev);
+        default:
+            break;
     }
-    else if (eid == EEVENTID_LOGIN_REQ)
-    {
-        return handle_login_req((LoginReqEv*) ev);
-    }
-    else if (eid == EEVENTID_RECHARGE_REQ)
-    {
-        return handle_recharge_req((RechargeReqEv*) ev);
-    }
-    else if (eid == EEVENTID_GET_ACCOUNT_BALANCE_REQ)
-    {
-        return handle_get_account_balance_req((GetAccountBalanceReqEv*) ev);
-    }
-    else if (eid == EEVENTID_LIST_ACCOUNT_RECORDS_REQ)
-    {
-        return handle_list_account_records_req((ListAccountRecordsReqEv*) ev);
-    }
+    
 
     return NULL;
 }
@@ -98,7 +93,7 @@ ListAccountRecordsRspEv* UserEventHandler::handle_list_account_records_req(ListA
     return new ListAccountRecordsRspEv(ERRC_SUCCESS, "success", "", records);
 }
 
-CommonRspEv* UserEventHandler::handle_recharge_req(RechargeReqEv* ev)
+RechargeRspEv* UserEventHandler::handle_recharge_req(RechargeReqEv* ev)
 {
     std::stringstream ss;
     ev->dump(ss);
@@ -159,7 +154,7 @@ std::string UserEventHandler::code_gen()
     return std::string(buffer);
 }
 
-CommonRspEv* UserEventHandler::handle_login_req(LoginReqEv* ev)
+LoginRspEv* UserEventHandler::handle_login_req(LoginReqEv* ev)
 {
     std::string mobile = ev->get_mobile();
     std::string code = ev->get_code();
@@ -168,7 +163,7 @@ CommonRspEv* UserEventHandler::handle_login_req(LoginReqEv* ev)
     if ( ((iter != m2c_.end()) && (0 != code.compare(iter->second)))
          || (iter == m2c_.end()))
     {
-        return new CommonRspEv(404, "varify sms code failed, please check your input", "");
+        return new LoginRspEv(404, "varify sms code failed, please check your input", "");
     }
 
     UserService us(sqlconn_);
@@ -179,11 +174,11 @@ CommonRspEv* UserEventHandler::handle_login_req(LoginReqEv* ev)
         if (!result)
         {
             LOG_ERROR("insert user(%s) to db failed.", mobile_.c_str());
-            return new CommonRspEv(ERRO_PROCCESS_FAILED, "insert db failed", "");
+            return new LoginRspEv(ERRO_PROCCESS_FAILED, "insert db failed", "");
         }
     }
 
-    return new CommonRspEv(200, "success", "");
+    return new LoginRspEv(200, "success", "");
 }
 
 GetAccountBalanceRspEv* UserEventHandler::handle_get_account_balance_req(GetAccountBalanceReqEv* ev)

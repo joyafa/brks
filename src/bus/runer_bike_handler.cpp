@@ -27,18 +27,18 @@ iEvent* RunnerEventHandler::handle(const iEvent* ev)
     }
 
     u32 eid = ev->get_eid();
-
-    if (eid == EEVENTID_UNLOCK_REQ)
+    switch (eid)
     {
-        return handle_unlock_req((UnlockReqEv*) ev);
-    }
-    else if (eid == EEVENTID_LOCK_REQ)
-    {
-        return handle_lock_req((LockReqEv*) ev);
-    }
-    else if (eid == EEVENTID_LIST_TRAVELS_REQ)
-    {
-        return handle_list_travel_records_req((ListTravelRecordsReqEv*) ev);
+        ////TODO: 还需要跟长连单车的进程通信,让他发送指令开锁单车
+        case EEVENTID_UNLOCK_REQ:
+            return handle_unlock_req((UnlockReqEv*) ev);
+        ////TODO: 还需要跟长连单车的进程通信,让他发送指令锁单车
+        case EEVENTID_LOCK_REQ:
+            return handle_lock_req((LockReqEv*) ev);
+        case EEVENTID_LIST_TRAVELS_REQ:
+            return handle_list_travel_records_req((ListTravelRecordsReqEv*) ev);
+        default:
+            break;
     }
 
     return NULL;

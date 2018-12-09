@@ -262,12 +262,13 @@ void Interface::run()
                     iEvent* rsp = callback_(ev);
                     if (rsp)
                     {
+                        //TODO: buffer size  maybe too small
                         bool ret = codecs_[proto_head.type_]->encode(rsp, (u8* )buf, BUF_SIZE);
                         if (ret)
                         {
                             //rsp body
                             //rsp header
-                            proto_head.msg_id_ = rsp.get_eid();
+                            proto_head.msg_id_ = rsp->get_eid();
                             //TODO:len buf 
                             nio_write(events[i].data.fd, buf, BUF_SIZE);
                         }

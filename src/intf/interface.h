@@ -6,6 +6,7 @@
 #include "protocol_head.h"
 #include "protocol_codec.h"
 #include "json_protocol_codec.h"
+#include "protobuf_codec.h"
 
 class Interface
 {
@@ -13,11 +14,23 @@ public:
     Interface(std::function< iEvent* (const iEvent*)>  callback) : callback_(callback)
     {
         codecs_[JSON_PROTOCOL_TYPE]   = new json_protocol_codec_t;
-        codecs_[PB_PROTOCOL_TYPE]     = NULL;
+        codecs_[PB_PROTOCOL_TYPE]     = new protobuf_protocol_codec_t;
         codecs_[FB_PROTOCOL_TYPE]     = NULL;
         codecs_[BINARY_PROTOCOL_TYPE] = NULL;
-    };
-
+    }
+    
+    ~Interface()
+    {
+        //delete
+        for(int i=0;i<4;++i)
+        {
+            if (NULL != codecs_[i] )
+            {
+                delete codecs_[i];
+            }
+        }
+    }
+    
     bool add_server_socket(int socket);
     bool close();
     void run();
