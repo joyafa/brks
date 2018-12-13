@@ -14,4 +14,6 @@ LINK_DIRECTORIES(../../third/lib/boost)
 TARGET_LINK_LIBRARIES(intf thrift)
 TARGET_LINK_LIBRARIES(intf thriftnb)
 TARGET_LINK_LIBRARIES(intf event)
+TARGET_LINK_LIBRARIES(intf protobuf)
+
 

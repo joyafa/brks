@@ -1,4 +1,8 @@
 #NodeServer cmake config file for src
+message("   --> PROTOBUF LIB: ${Protobuf_LIBRARIES}")
+message("   --> PROTOBUF INCLUDE: ${PROTOBUF_INCLUDE_DIRS}")
+message("   --> PROTOBUF VERSION: ${Protobuf_VERSION}")
+message("   --> PROTOBUF Found: ${Protobuf_FOUND}")
 
 #cmake version request
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
@@ -39,6 +43,7 @@ TARGET_LINK_LIBRARIES(brks log4cpp)
 TARGET_LINK_LIBRARIES(brks thrift)
 TARGET_LINK_LIBRARIES(brks thriftnb)
 TARGET_LINK_LIBRARIES(brks event)
+TARGET_LINK_LIBRARIES(brks protobuf)
 TARGET_LINK_LIBRARIES(brks jsoncpp)
 TARGET_LINK_LIBRARIES(brks libtinyxml.a)
 TARGET_LINK_LIBRARIES(brks pthread)

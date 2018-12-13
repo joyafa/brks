@@ -53,28 +53,28 @@ bool protobuf_protocol_codec_t::encode(iEvent* ev, u8* buffer, u32 size)
     switch(eid)
     {
     case EEVENTID_GET_MOBILE_CODE_RSP://CommonRspEv
-        ret = encode_common_rsp_ev(ev, buffer, size);
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_LOGIN_RSP://CommonRspEv
-        ret = encode_common_rsp_ev(ev, buffer, size);
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_RECHARGE_RSP://CommonRspEv
-        ret = encode_common_rsp_ev(ev, buffer, size);
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_GET_ACCOUNT_BALANCE_RSP://GetAccountBalanceRspEv ok
-        ret = encode_get_account_balance_rsp_ev(ev, buffer, size);
+        ret = encode_get_account_balance_rsp_ev(dynamic_cast<GetAccountBalanceRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_LIST_ACCOUNT_RECORDS_RSP://ListAccountRecordsRspEv
-        ret = encode_list_account_records_rsp_ev(ev, buffer, size);
+        ret = encode_list_account_records_rsp_ev(dynamic_cast<ListAccountRecordsRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_UNLOCK_RSP://UnlockRspEv
-        ret = encode_common_rsp_ev(buffer, size);
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_LIST_TRAVELS_RSP://ListTravelRecordsRspEv
-        ev = encode_list_travels_records_rsp_ev(ev, buffer, size);
+        ret= encode_list_travels_records_rsp_ev(dynamic_cast<ListTravelRecordsRspEv *>(ev), buffer, size);
         break;
     case EEVENTID_LOCK_RSP://LockRspEv
-        ret = encode_common_rsp_ev(buffer, size);
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
         break;
     default:
         LOG_WARN("mid %d is invalid.", eid);
@@ -82,6 +82,34 @@ bool protobuf_protocol_codec_t::encode(iEvent* ev, u8* buffer, u32 size)
    }
 
     return ret;
+}
+
+
+bool protobuf_protocol_codec_t::encode_list_travels_records_rsp_ev(ListTravelRecordsRspEv* rsp, u8* buffer, u32 size)
+{
+    list_travel_records_rsponse rsp_ret;
+    rsponse_result ret;
+    ret.set_code(rsp->get_code());
+    ret.set_msg(rsp->get_msg());
+    if (!rsp->get_data().empty())
+    {
+        ret.set_data(rsp->get_data());
+    }
+    rsp_ret.set_allocated_ret(&ret);
+    rsp_ret.set_mileage(rsp->get_travel_info().mileage);
+    rsp_ret.set_discharge(rsp->get_travel_info().discharge);
+    rsp_ret.set_calorie(rsp->get_travel_info().calorie);
+    //array
+    const std::vector<TravelRecord> &recodes = rsp->get_travel_info().records;    
+    for (size_t pos = 0 ; pos < recodes.size();++pos)
+    {
+        list_travel_records_rsponse_travel_record* record = rsp_ret.add_records();
+        record->set_amount(recodes[pos].amount);
+        record->set_duration(recodes[pos].duration);
+        record->set_stm(recodes[pos].startTimeStamp);
+    }
+
+    return true;
 }
 
 
@@ -93,12 +121,20 @@ bool protobuf_protocol_codec_t::encode_list_account_records_rsp_ev(ListAccountRe
     ret.set_msg(rsp->get_msg());
     if (!rsp->get_data().empty())
     {
-        rsp_ret.set_data(rsp->get_data());
+        ret.set_data(rsp->get_data());
     }
-    rsp_ret->set_allocated_ret(&ret);
+    rsp_ret.set_allocated_ret(&ret);
     //array
-    const std::vector<AccountRecord> &recodes = rsp->get_records();
-    rsp_ret.recodes
+    const std::vector<AccountRecord> &recodes = rsp->get_records();    
+    for (size_t pos = 0 ; pos < recodes.size();++pos)
+    {
+        list_account_records_response_account_record* record = rsp_ret.add_records();
+        record->set_type(recodes[pos].type);
+        record->set_limit(recodes[pos].limit);
+        record->set_timestamp(recodes[pos].timestamp);
+    }
+
+    return true;
 }
 
 
@@ -113,7 +149,7 @@ bool protobuf_protocol_codec_t::encode_get_account_balance_rsp_ev(GetAccountBala
         ret.set_data(rsp->get_data());
     }
     rsp_ret.set_allocated_ret(&ret);
-    rsp.set_balance(rsp.get_balance());
+    rsp_ret.set_balance(rsp->get_balance());
     std::ostringstream oss;
     oss.rdbuf()->pubsetbuf((char* )buffer, size);
 
@@ -125,7 +161,7 @@ MobileCodeReqEv* protobuf_protocol_codec_t::decode_2_mobile_code_req_ev(const  u
 {
     mobile_request mobile_req;
     std::istringstream ss;
-    ss.rdbuf()->pubsetbuf(buffer, size);
+    ss.rdbuf()->pubsetbuf((char* )buffer, size);
     mobile_req.ParseFromIstream(&ss);
 
     if (!mobile_req.has_mobile())

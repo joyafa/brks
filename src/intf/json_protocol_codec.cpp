@@ -8,31 +8,37 @@
 bool json_protocol_codec_t::encode(iEvent* ev, u8* buffer, u32 size)
 {
     bool ret = false;
-    switch(ev->get_eid())
+    u32 eid = ev->get_eid();
+    switch(eid)
     {
-        case EEVENTID_GET_MOBILE_CODE_RSP:
-        case EEVENTID_LOGIN_RSP:
-        case EEVENTID_RECHARGE_RSP:
-        case EEVENTID_UNLOCK_RSP:
-        case EEVENTID_LOCK_RSP:
-            ret = encode_common_rsp_ev(ev, buffer, size);
-            break;
-
-        case EEVENTID_GET_ACCOUNT_BALANCE_RSP:
-            ret = encode_get_account_balance_rsp_ev(ev, buffer, size);
-            break;
-        
-        case EEVENTID_LIST_ACCOUNT_RECORDS_RSP:
-            ret = encode_list_account_records_rsp_ev(ev, buffer, size);
-            break;
-            
-        case EEVENTID_LIST_TRAVELS_RSP:
-            ret = encode_list_travels_rsp_ev(ev, buffer, size);
-            break;
-            
-        default:
-            break;
-    }
+    case EEVENTID_GET_MOBILE_CODE_RSP://CommonRspEv
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_LOGIN_RSP://CommonRspEv
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_RECHARGE_RSP://CommonRspEv
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_GET_ACCOUNT_BALANCE_RSP://GetAccountBalanceRspEv ok
+        ret = encode_get_account_balance_rsp_ev(dynamic_cast<GetAccountBalanceRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_LIST_ACCOUNT_RECORDS_RSP://ListAccountRecordsRspEv
+        ret = encode_list_account_records_rsp_ev(dynamic_cast<ListAccountRecordsRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_UNLOCK_RSP://UnlockRspEv
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_LIST_TRAVELS_RSP://ListTravelRecordsRspEv
+        ret= encode_list_travels_records_rsp_ev(dynamic_cast<ListTravelRecordsRspEv *>(ev), buffer, size);
+        break;
+    case EEVENTID_LOCK_RSP://LockRspEv
+        ret = encode_common_rsp_ev(dynamic_cast<CommonRspEv *>(ev), buffer, size);
+        break;
+    default:
+        LOG_WARN("mid %d is invalid.", eid);
+        break;          
+   }
 
     return ret;
 }
@@ -43,7 +49,7 @@ iEvent* json_protocol_codec_t::decode(u16 mid, u8* buffer, u32 size)
     Json::Reader reader;
     Json::Value attributes;
     if (!reader.parse((const char*)buffer, attributes))
-        return -1;
+        return NULL;
 
     iEvent* ev= NULL;
 
@@ -213,18 +219,62 @@ bool json_protocol_codec_t::encode_get_account_balance_rsp_ev(GetAccountBalanceR
 }
 
 
-bool json_protocol_codec_t::encode_list_account_records_rsp_ev(ListAccountRecordsReqEv* rsp, u8* buffer, u32 size)
+bool json_protocol_codec_t::encode_list_account_records_rsp_ev(ListAccountRecordsRspEv* rsp, u8* buffer, u32 size)
 {
     Json::Value attributes;
-    //TODO 
+    attributes["code"] = rsp->get_code();
+    attributes["msg"]  = rsp->get_msg();
+    attributes["data"] = rsp->get_data();    
+
+    Json::Value rsp_ret;
+    rsp_ret["ret"] = attributes;
+    
+    //array
+    const std::vector<AccountRecord> &recodes = rsp->get_records();    
+    for (size_t pos = 0 ; pos < recodes.size();++pos)
+    {
+        Json::Value record;
+        record["type"]      = recodes[pos].type;
+        record["limit"]     = recodes[pos].limit;
+        //TODO: longlong
+        //record["timestamp"] = recodes[pos].timestamp;
+        rsp_ret["records"].append(record);
+    }
+    
+    Json::FastWriter writer;
+    std::string body = writer.write(rsp_ret);
+    memcpy(buffer, body.data(), body.size());
+
     return true;
 }
 
 
-bool json_protocol_codec_t::encode_list_travels_rsp_ev(ListTravelRecordsReqEv* rsp, u8* buffer, u32 size)   
+bool json_protocol_codec_t::encode_list_travels_records_rsp_ev(ListTravelRecordsRspEv* rsp, u8* buffer, u32 size)   
 {
-    //TODO:
+    Json::Value attributes;
+    attributes["code"] = rsp->get_code();
+    attributes["msg"]  = rsp->get_msg();
+    attributes["data"] = rsp->get_data();    
+
+    Json::Value rsp_ret;
+    rsp_ret["ret"] = attributes;
+    rsp_ret["mileage"]   = rsp->get_travel_info().mileage;
+    rsp_ret["discharge"] = rsp->get_travel_info().discharge;
+    rsp_ret["calorie"]   = rsp->get_travel_info().calorie;
+    //array
+    const std::vector<TravelRecord> &recodes = rsp->get_travel_info().records;    
+    for (size_t pos = 0 ; pos < recodes.size();++pos)
+    {
+        Json::Value record;
+        record["amount"]   = recodes[pos].amount;
+        record["duration"] = recodes[pos].duration;
+        //TODO:longlong
+        //record["stm"]      = recodes[pos].startTimeStamp;
+    }   
+    
+    Json::FastWriter writer;
+    std::string body = writer.write(rsp_ret);
+    memcpy(buffer, body.data(), body.size());     
+
     return true;
 }
-
-
